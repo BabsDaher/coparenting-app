@@ -24,7 +24,7 @@ const LEGEND = [
 export default function Calendar() {
   const [month, setMonth] = useState(new Date())
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const { data, getDay, setOvernight, addEvent, removeEvent, setNote } = useCalendar()
+  const { getDay, setOvernight, addEvent, removeEvent, setNote } = useCalendar()
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),

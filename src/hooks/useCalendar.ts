@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
+import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import type { CalEvent, CalendarData, DayData, Overnight } from '../types'
 
