@@ -7,7 +7,6 @@ export function useCalendar() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Initial fetch
     supabase.from('calendar').select('*').then(({ data: rows }) => {
       const result: CalendarData = {}
       rows?.forEach(row => { result[row.date_key] = row.data })
@@ -15,7 +14,6 @@ export function useCalendar() {
       setLoading(false)
     })
 
-    // Realtime subscription
     const channel = supabase
       .channel('calendar-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar' }, () => {
@@ -42,6 +40,10 @@ export function useCalendar() {
     await saveDay(dateKey, { ...getDay(dateKey), overnight })
   }
 
+  async function setFamilyDay(dateKey: string, familyDay: boolean) {
+    await saveDay(dateKey, { ...getDay(dateKey), familyDay })
+  }
+
   async function addEvent(dateKey: string, event: Omit<CalEvent, 'id'>) {
     const day = getDay(dateKey)
     const newEvent: CalEvent = { ...event, id: crypto.randomUUID() }
@@ -57,5 +59,5 @@ export function useCalendar() {
     await saveDay(dateKey, { ...getDay(dateKey), note })
   }
 
-  return { data, loading, getDay, setOvernight, addEvent, removeEvent, setNote }
+  return { data, loading, getDay, setOvernight, setFamilyDay, addEvent, removeEvent, setNote }
 }
