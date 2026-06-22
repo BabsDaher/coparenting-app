@@ -15,7 +15,8 @@ export function useCalendar() {
   }
 
   useEffect(() => {
-    supabase.from('calendar').select('*').then(({ data: rows }) => {
+    supabase.from('calendar').select('*').then(({ data: rows, error }) => {
+      if (error) console.error('calendar fetch error:', error)
       if (rows) applyRows(rows)
       setLoading(false)
     })
@@ -41,7 +42,9 @@ export function useCalendar() {
     const next = { ...dataRef.current, [dateKey]: dayData }
     dataRef.current = next
     setData({ ...next })
-    supabase.from('calendar').upsert({ date_key: dateKey, data: dayData })
+    supabase.from('calendar').upsert({ date_key: dateKey, data: dayData }).then(({ error }) => {
+      if (error) console.error('calendar save error:', error)
+    })
   }
 
   function setOvernight(dateKey: string, overnight: Overnight | undefined) {

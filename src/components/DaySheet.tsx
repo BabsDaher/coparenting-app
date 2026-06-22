@@ -151,7 +151,7 @@ export default function DaySheet({
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="text-xs text-gray-500 bg-transparent outline-none"
+                className="w-full text-xs text-gray-500 bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none"
               />
               <div className="flex gap-2">
                 <button
