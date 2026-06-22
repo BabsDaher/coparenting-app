@@ -60,6 +60,15 @@ export function useCalendar() {
     );
   }
 
+  async function setFamilyDay(dateKey: string, familyDay: boolean) {
+    const ref = doc(db, "calendar", DOC_ID);
+    await setDoc(
+      ref,
+      { [dateKey]: { ...getDay(dateKey), familyDay } },
+      { merge: true },
+    );
+  }
+
   async function setNote(dateKey: string, note: string) {
     const ref = doc(db, "calendar", DOC_ID);
     await setDoc(
@@ -74,6 +83,7 @@ export function useCalendar() {
     loading,
     getDay,
     setOvernight,
+    setFamilyDay,
     addEvent,
     removeEvent,
     setNote,

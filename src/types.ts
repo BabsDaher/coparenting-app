@@ -1,4 +1,4 @@
-export type Overnight = 'lissi' | 'babs' | 'family'
+export type Overnight = 'lissi' | 'babs'
 
 export interface CalEvent {
   id: string
@@ -8,6 +8,7 @@ export interface CalEvent {
 
 export interface DayData {
   overnight?: Overnight
+  familyDay?: boolean
   events: CalEvent[]
   note?: string
 }

@@ -20,19 +20,18 @@ import { auth } from "../firebase";
 const OVERNIGHT_STYLES: Record<Overnight, string> = {
   lissi: "bg-pink-50 border-pink-200",
   babs: "bg-blue-50 border-blue-200",
-  family: "bg-purple-50 border-purple-200",
 };
 
 const LEGEND = [
-  { value: "lissi" as Overnight, label: "Lissi", dot: "bg-pink-300" },
-  { value: "babs" as Overnight, label: "Babs", dot: "bg-blue-300" },
-  { value: "family" as Overnight, label: "Family", dot: "bg-purple-400" },
+  { label: "Lissi", dot: "bg-pink-300" },
+  { label: "Babs", dot: "bg-blue-300" },
+  { label: "Family day", dot: "bg-purple-400" },
 ];
 
 export default function Calendar() {
   const [month, setMonth] = useState(new Date());
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const { getDay, setOvernight, addEvent, removeEvent, setNote } =
+  const { getDay, setOvernight, setFamilyDay, addEvent, removeEvent, setNote } =
     useCalendar();
 
   const days = eachDayOfInterval({
@@ -66,7 +65,7 @@ export default function Calendar() {
       {/* Legend */}
       <div className="flex gap-3 px-4 pb-2">
         {LEGEND.map((l) => (
-          <div key={l.value} className="flex items-center gap-1.5">
+          <div key={l.label} className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 rounded-sm ${l.dot}`} />
             <span className="text-xs text-gray-500">{l.label}</span>
           </div>
@@ -102,24 +101,24 @@ export default function Calendar() {
               key={key}
               onClick={() => setSelectedKey(selected ? null : key)}
               className={`
-                min-h-[48px] rounded-lg border text-left p-1 transition-all
-                ${
-                  inMonth
-                    ? overnightStyle
-                    : "bg-white border-gray-50 opacity-30"
-                }
-                ${selected ? "ring-2 ring-blue-400 ring-offset-1" : ""}
+                min-h-[48px] rounded-lg border text-left p-1 transition-all relative
+                ${inMonth ? overnightStyle : "bg-white border-gray-50 opacity-30"}
+                ${selected ? "ring-2 ring-gray-400 ring-offset-1" : ""}
               `}
             >
               <span
-                className={`text-[10px] font-medium block ${
-                  today ? "text-blue-500" : "text-gray-700"
+                className={`text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full ${
+                  today ? "bg-gray-800 text-white" : "text-gray-700"
                 }`}
               >
                 {format(day, "d")}
               </span>
+              {/* Family day indicator — purple corner dot */}
+              {dayData.familyDay && (
+                <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-purple-400" />
+              )}
               {dayData.events.length > 0 && (
-                <div className="w-1 h-1 rounded-full bg-blue-400 mt-0.5" />
+                <div className="w-1 h-1 rounded-full bg-gray-400 mt-0.5" />
               )}
               {dayData.note && (
                 <div className="w-1 h-1 rounded-full bg-amber-400 mt-0.5" />
@@ -148,6 +147,7 @@ export default function Calendar() {
             day={selectedDay}
             onClose={() => setSelectedKey(null)}
             onSetOvernight={(o) => setOvernight(selectedKey, o)}
+            onToggleFamilyDay={() => setFamilyDay(selectedKey, !selectedDay.familyDay)}
             onAddEvent={(e) => addEvent(selectedKey, e)}
             onRemoveEvent={(id) => removeEvent(selectedKey, id)}
             onSetNote={(n) => setNote(selectedKey, n)}

@@ -31,7 +31,7 @@ export default function LoginScreen() {
             className="w-40 h-40 object-contain mx-auto mb-2"
           />
           <h1 className="text-2xl font-semibold text-gray-800">Lissi & Babs</h1>
-          <p className="text-sm text-gray-400 mt-1">Family calendar</p>
+          <p className="text-sm text-gray-400 mt-1">Otis's family calendar</p>
         </div>
 
         <form
