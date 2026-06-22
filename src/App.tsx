@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react'
-import { onAuthStateChanged, type User } from 'firebase/auth'
-import { auth } from './firebase'
+import { supabase } from './supabase'
+import type { Session } from '@supabase/supabase-js'
 import LoginScreen from './components/LoginScreen'
 import Calendar from './components/Calendar'
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    return onAuthStateChanged(auth, u => {
-      setUser(u)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
       setChecking(false)
     })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
   if (checking) return null
-  return user ? <Calendar /> : <LoginScreen />
+  return session ? <Calendar /> : <LoginScreen />
 }
