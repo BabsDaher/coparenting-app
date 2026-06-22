@@ -14,12 +14,15 @@ export function useCalendar() {
     setData(result)
   }
 
+  async function fetchAll() {
+    const { data: rows, error } = await supabase.from('calendar').select('*')
+    if (error) console.error('calendar fetch error:', error)
+    if (rows) applyRows(rows)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    supabase.from('calendar').select('*').then(({ data: rows, error }) => {
-      if (error) console.error('calendar fetch error:', error)
-      if (rows) applyRows(rows)
-      setLoading(false)
-    })
+    fetchAll()
 
     const channel = supabase
       .channel('calendar-changes')
@@ -70,5 +73,5 @@ export function useCalendar() {
     optimistic(dateKey, { ...getDay(dateKey), note })
   }
 
-  return { data, loading, getDay, setOvernight, setFamilyDay, addEvent, removeEvent, setNote }
+  return { data, loading, getDay, refresh: fetchAll, setOvernight, setFamilyDay, addEvent, removeEvent, setNote }
 }

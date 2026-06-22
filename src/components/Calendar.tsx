@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   startOfMonth,
   endOfMonth,
@@ -30,8 +30,36 @@ const LEGEND = [
 export default function Calendar() {
   const [month, setMonth] = useState(new Date());
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const { getDay, setOvernight, setFamilyDay, addEvent, removeEvent, setNote } =
+  const { getDay, refresh, setOvernight, setFamilyDay, addEvent, removeEvent, setNote } =
     useCalendar();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const pulling = useRef(false);
+  const [pullY, setPullY] = useState(0);
+
+  async function doRefresh() {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartY.current = e.touches[0].clientY;
+    pulling.current = (e.currentTarget as HTMLElement).scrollTop === 0;
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (!pulling.current) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setPullY(Math.min(delta * 0.4, 60));
+  }
+
+  async function onTouchEnd() {
+    if (pullY > 40) doRefresh();
+    setPullY(0);
+    pulling.current = false;
+  }
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),
@@ -41,7 +69,21 @@ export default function Calendar() {
   const selectedDay = selectedKey ? getDay(selectedKey) : null;
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen flex flex-col bg-white">
+    <div
+      className="max-w-sm mx-auto min-h-screen flex flex-col bg-white overflow-y-auto"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {(pullY > 0 || refreshing) && (
+        <div
+          className="flex items-center justify-center text-gray-400 text-xs transition-all"
+          style={{ height: refreshing ? 36 : pullY }}
+        >
+          {refreshing ? "Refreshing…" : pullY > 40 ? "Release to refresh" : "Pull to refresh"}
+        </div>
+      )}
 
       {/* Top banner */}
       <div className="flex items-center gap-3 px-4 pt-10 pb-3 border-b border-gray-100">
@@ -50,12 +92,19 @@ export default function Calendar() {
           <p className="font-semibold text-gray-800 text-sm leading-tight">Lissi & Babs</p>
           <p className="text-xs text-gray-400">Otis's family calendar</p>
         </div>
-        <button
-          onClick={() => supabase.auth.signOut()}
-          className="ml-auto text-xs text-gray-300"
-        >
-          Sign out
-        </button>
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            onClick={doRefresh}
+            disabled={refreshing}
+            className="text-gray-300 text-lg leading-none disabled:opacity-40"
+            aria-label="Refresh"
+          >
+            ↻
+          </button>
+          <button onClick={() => supabase.auth.signOut()} className="text-xs text-gray-300">
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* Month nav */}
