@@ -1,16 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import type { CalEvent, CalendarData, DayData, Overnight } from '../types'
 
 export function useCalendar() {
   const [data, setData] = useState<CalendarData>({})
   const [loading, setLoading] = useState(true)
+  const dataRef = useRef<CalendarData>({})
+
+  function applyRows(rows: { date_key: string; data: DayData }[]) {
+    const result: CalendarData = {}
+    rows.forEach(row => { result[row.date_key] = row.data })
+    dataRef.current = result
+    setData(result)
+  }
 
   useEffect(() => {
     supabase.from('calendar').select('*').then(({ data: rows }) => {
-      const result: CalendarData = {}
-      rows?.forEach(row => { result[row.date_key] = row.data })
-      setData(result)
+      if (rows) applyRows(rows)
       setLoading(false)
     })
 
@@ -18,9 +24,7 @@ export function useCalendar() {
       .channel('calendar-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar' }, () => {
         supabase.from('calendar').select('*').then(({ data: rows }) => {
-          const result: CalendarData = {}
-          rows?.forEach(row => { result[row.date_key] = row.data })
-          setData(result)
+          if (rows) applyRows(rows)
         })
       })
       .subscribe()
@@ -29,34 +33,38 @@ export function useCalendar() {
   }, [])
 
   function getDay(dateKey: string): DayData {
-    return data[dateKey] ?? { events: [] }
+    return dataRef.current[dateKey] ?? { events: [] }
   }
 
-  async function saveDay(dateKey: string, dayData: DayData) {
-    await supabase.from('calendar').upsert({ date_key: dateKey, data: dayData })
+  // Optimistically update local state, then persist
+  function optimistic(dateKey: string, dayData: DayData) {
+    const next = { ...dataRef.current, [dateKey]: dayData }
+    dataRef.current = next
+    setData({ ...next })
+    supabase.from('calendar').upsert({ date_key: dateKey, data: dayData })
   }
 
-  async function setOvernight(dateKey: string, overnight: Overnight | undefined) {
-    await saveDay(dateKey, { ...getDay(dateKey), overnight })
+  function setOvernight(dateKey: string, overnight: Overnight | undefined) {
+    optimistic(dateKey, { ...getDay(dateKey), overnight })
   }
 
-  async function setFamilyDay(dateKey: string, familyDay: boolean) {
-    await saveDay(dateKey, { ...getDay(dateKey), familyDay })
+  function setFamilyDay(dateKey: string, familyDay: boolean) {
+    optimistic(dateKey, { ...getDay(dateKey), familyDay })
   }
 
-  async function addEvent(dateKey: string, event: Omit<CalEvent, 'id'>) {
+  function addEvent(dateKey: string, event: Omit<CalEvent, 'id'>) {
     const day = getDay(dateKey)
     const newEvent: CalEvent = { ...event, id: crypto.randomUUID() }
-    await saveDay(dateKey, { ...day, events: [...day.events, newEvent] })
+    optimistic(dateKey, { ...day, events: [...day.events, newEvent] })
   }
 
-  async function removeEvent(dateKey: string, eventId: string) {
+  function removeEvent(dateKey: string, eventId: string) {
     const day = getDay(dateKey)
-    await saveDay(dateKey, { ...day, events: day.events.filter(e => e.id !== eventId) })
+    optimistic(dateKey, { ...day, events: day.events.filter(e => e.id !== eventId) })
   }
 
-  async function setNote(dateKey: string, note: string) {
-    await saveDay(dateKey, { ...getDay(dateKey), note })
+  function setNote(dateKey: string, note: string) {
+    optimistic(dateKey, { ...getDay(dateKey), note })
   }
 
   return { data, loading, getDay, setOvernight, setFamilyDay, addEvent, removeEvent, setNote }
