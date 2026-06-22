@@ -14,8 +14,8 @@ import {
 import type { Overnight } from "../types";
 import DaySheet from "./DaySheet";
 import { useCalendar } from "../hooks/useCalendar";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
+import { supabase } from "../supabase";
+;
 
 const OVERNIGHT_STYLES: Record<Overnight, string> = {
   lissi: "bg-pink-50 border-pink-200",
@@ -130,7 +130,7 @@ export default function Calendar() {
 
       {/* Sign out */}
       <div className="text-center py-4">
-        <button onClick={() => signOut(auth)} className="text-xs text-gray-300">
+        <button onClick={() => supabase.auth.signOut()} className="text-xs text-gray-300">
           Sign out
         </button>
       </div>
