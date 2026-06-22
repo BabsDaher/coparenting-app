@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   startOfMonth,
   endOfMonth,
@@ -30,7 +30,7 @@ const LEGEND = [
 export default function Calendar() {
   const [month, setMonth] = useState(new Date());
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const { getDay, refresh, setOvernight, setFamilyDay, addEvent, removeEvent, setNote } =
+  const { data, getDay, refresh, setOvernight, setFamilyDay, addEvent, removeEvent, setNote } =
     useCalendar();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -65,6 +65,21 @@ export default function Calendar() {
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }),
   });
+
+  const overnightCounts = useMemo(() => {
+    const monthDays = eachDayOfInterval({
+      start: startOfMonth(month),
+      end: endOfMonth(month),
+    });
+    let lissi = 0;
+    let babs = 0;
+    for (const day of monthDays) {
+      const overnight = data[format(day, "yyyy-MM-dd")]?.overnight;
+      if (overnight === "lissi") lissi++;
+      else if (overnight === "babs") babs++;
+    }
+    return { lissi, babs };
+  }, [month, data]);
 
   const selectedDay = selectedKey ? getDay(selectedKey) : null;
 
@@ -173,6 +188,25 @@ export default function Calendar() {
             </button>
           );
         })}
+      </div>
+
+      {/* Monthly overnight summary */}
+      <div className="px-4 py-4 mt-2 border-t border-gray-100">
+        <p className="text-xs font-medium text-gray-500 mb-2">{format(month, "MMMM yyyy")}</p>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-sm bg-pink-300" />
+            <span className="text-xs text-pink-800">
+              Lissi — {overnightCounts.lissi} {overnightCounts.lissi === 1 ? "night" : "nights"}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-sm bg-blue-300" />
+            <span className="text-xs text-blue-800">
+              Babs — {overnightCounts.babs} {overnightCounts.babs === 1 ? "night" : "nights"}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Bottom sheet */}
