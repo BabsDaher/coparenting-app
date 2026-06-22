@@ -100,13 +100,14 @@ export default function Calendar() {
               onClick={() => setSelectedKey(selected ? null : key)}
               className={`
                 h-10 rounded-lg border text-left p-1 transition-all relative
-                ${inMonth ? overnightStyle : "bg-white border-gray-50 opacity-30"}
+                ${overnightStyle}
+                ${!inMonth ? "opacity-50" : ""}
                 ${selected ? "ring-2 ring-gray-400 ring-offset-1" : ""}
               `}
             >
               <span
                 className={`text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full ${
-                  today ? "bg-gray-800 text-white" : "text-gray-700"
+                  today ? "bg-gray-800 text-white" : inMonth ? "text-gray-700" : "text-gray-400"
                 }`}
               >
                 {format(day, "d")}
