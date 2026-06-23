@@ -11,6 +11,8 @@ export interface DayData {
   familyDay?: boolean
   events: CalEvent[]
   note?: string
+  updatedBy?: string
+  updatedAt?: string
 }
 
 // Firestore document keyed by 'YYYY-MM-DD'

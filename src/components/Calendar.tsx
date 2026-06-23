@@ -6,6 +6,7 @@ import {
   endOfWeek,
   eachDayOfInterval,
   format,
+  parseISO,
   isSameMonth,
   isToday,
   addMonths,
@@ -30,8 +31,10 @@ const LEGEND = [
 export default function Calendar() {
   const [month, setMonth] = useState(new Date());
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const { data, getDay, refresh, setOvernight, setFamilyDay, addEvent, removeEvent, setNote } =
+  const { data, getDay, refresh, lastUpdate, setOvernight, setFamilyDay, addEvent, removeEvent, setNote } =
     useCalendar();
+
+  const [alertDismissed, setAlertDismissed] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const touchStartY = useRef(0);
@@ -121,6 +124,23 @@ export default function Calendar() {
           </button>
         </div>
       </div>
+
+      {/* Latest update alert */}
+      {lastUpdate && !alertDismissed && (
+        <div className="mx-4 mt-2 mb-1 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs text-gray-600 flex items-start gap-2">
+          <p className="flex-1">
+            {lastUpdate.by} last updated the calendar on{" "}
+            {format(parseISO(lastUpdate.at), "d MMM yyyy, HH:mm")}
+          </p>
+          <button
+            onClick={() => setAlertDismissed(true)}
+            className="text-gray-400 leading-none shrink-0"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Month nav */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1">

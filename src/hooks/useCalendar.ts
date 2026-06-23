@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { supabase } from '../supabase'
+import { editorNameFromSession } from '../lib/editorName'
 import type { CalEvent, CalendarData, DayData, Overnight } from '../types'
 
 export function useCalendar() {
@@ -41,11 +42,17 @@ export function useCalendar() {
   }
 
   // Optimistically update local state, then persist
-  function optimistic(dateKey: string, dayData: DayData) {
-    const next = { ...dataRef.current, [dateKey]: dayData }
+  async function optimistic(dateKey: string, dayData: DayData) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const stamped: DayData = {
+      ...dayData,
+      updatedBy: editorNameFromSession(session),
+      updatedAt: new Date().toISOString(),
+    }
+    const next = { ...dataRef.current, [dateKey]: stamped }
     dataRef.current = next
     setData({ ...next })
-    supabase.from('calendar').upsert({ date_key: dateKey, data: dayData }).then(({ error }) => {
+    supabase.from('calendar').upsert({ date_key: dateKey, data: stamped }).then(({ error }) => {
       if (error) console.error('calendar save error:', error)
     })
   }
@@ -73,5 +80,16 @@ export function useCalendar() {
     optimistic(dateKey, { ...getDay(dateKey), note })
   }
 
-  return { data, loading, getDay, refresh: fetchAll, setOvernight, setFamilyDay, addEvent, removeEvent, setNote }
+  const lastUpdate = useMemo(() => {
+    let latest: { by: string; at: string; dateKey: string } | null = null
+    for (const [dateKey, day] of Object.entries(data)) {
+      if (!day.updatedAt || !day.updatedBy) continue
+      if (!latest || day.updatedAt > latest.at) {
+        latest = { by: day.updatedBy, at: day.updatedAt, dateKey }
+      }
+    }
+    return latest
+  }, [data])
+
+  return { data, loading, getDay, refresh: fetchAll, lastUpdate, setOvernight, setFamilyDay, addEvent, removeEvent, setNote }
 }
