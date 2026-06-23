@@ -15,6 +15,7 @@ import {
 import type { Overnight } from "../types";
 import DaySheet from "./DaySheet";
 import { useCalendar } from "../hooks/useCalendar";
+import { getTonightStatus } from "../lib/overnightStreak";
 import { supabase } from "../supabase";
 
 const OVERNIGHT_STYLES: Record<Overnight, string> = {
@@ -83,6 +84,8 @@ export default function Calendar() {
     }
     return { lissi, babs };
   }, [month, data]);
+
+  const tonightStatus = useMemo(() => getTonightStatus(data, new Date()), [data]);
 
   const selectedDay = selectedKey ? getDay(selectedKey) : null;
 
@@ -227,6 +230,30 @@ export default function Calendar() {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Tonight status */}
+      <div
+        className={`mx-4 mb-4 px-4 py-3 rounded-xl border ${
+          tonightStatus.overnight === "lissi"
+            ? "bg-pink-50 border-pink-200 text-pink-800"
+            : tonightStatus.overnight === "babs"
+              ? "bg-blue-50 border-blue-200 text-blue-800"
+              : "bg-gray-50 border-gray-100 text-gray-500"
+        }`}
+      >
+        {tonightStatus.overnight ? (
+          tonightStatus.lines.map((line, i) => (
+            <p key={i} className={`${i === 0 ? "text-sm font-semibold" : "text-xs mt-0.5"}`}>
+              {line}
+            </p>
+          ))
+        ) : (
+          <>
+            <p className="text-sm font-semibold">Tonight not set</p>
+            <p className="text-xs mt-0.5">Tap today on the calendar to assign</p>
+          </>
+        )}
       </div>
 
       {/* Bottom sheet */}
